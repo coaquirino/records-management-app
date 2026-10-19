@@ -1,0 +1,68 @@
+
+const SHEET_NAME = 'Records';
+
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('Index')
+    .setTitle('Records Management App');
+}
+
+function getSheet() {
+  const id = '1ZhucJWxAPytsPhiNirjZhpDZLDlHfoIrnbY-Ea36Fys';
+  const ss = SpreadsheetApp.openById(id);
+  let sheet = ss.getSheetByName(SHEET_NAME);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+  }
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow([
+      'ID', 'Date', 'Document No.',
+      'Title', 'Office', 'Status', 'Remarks'
+    ]);
+  }
+
+  return sheet;
+}
+
+function getRecords() {
+  const sheet = getSheet();
+  const rows = sheet.getDataRange().getDisplayValues();
+
+  return rows.slice(1)
+    .filter(row => row[0] !== '')
+    .map(row => ({
+      id: row[0],
+      date: row[1],
+      documentNo: row[2],
+      title: row[3],
+      office: row[4],
+      status: row[5],
+      remarks: row[6]
+    }));
+}
+
+function addRecord(record) {
+  if (!record || !record.title ||
+      !record.documentNo) {
+    throw new Error(
+      'Document number and title are required.'
+    );
+  }
+
+  const sheet = getSheet();
+  const id = Utilities.getUuid();
+
+  sheet.appendRow([
+    id,
+    record.date || '',
+    record.documentNo.trim(),
+    record.title.trim(),
+    record.office || '',
+    record.status || 'Pending',
+    record.remarks || ''
+  ]);
+
+  return { success: true, id: id };
+}
+
